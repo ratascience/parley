@@ -1,0 +1,8 @@
+library(here)
+library(tidyverse)
+library(magrittr)
+library(janitor)
+library(xml2)
+library(rvest)
+library(pscl)
+library(dwnominate)
