@@ -1,53 +1,6 @@
 source(here::here("code", "code_01_libraries.R"))
 
-# TRÁMITE LEGISLATIVO -----------------------------------------------------
-
-#    Periodos Legislativos ---------------------------------------------------
-
-periodos_legis_url <- "http://opendata.congreso.cl/wscamaradiputados.asmx/getPeriodosLegislativos"
-
-periodos_legis <- periodos_legis_url %>% read_xml
-periodos_legis <- periodos_legis %>% as_list
-periodos_legis <- periodos_legis %>% as_tibble
-periodos_legis <- periodos_legis %>% set_colnames(periodos_legis %>% colnames %>% make_clean_names())
-periodos_legis <- periodos_legis %>% mutate(periodos_legislativo = periodos_legislativo %>% map(as_tibble))
-periodos_legis <- periodos_legis %>% unnest(periodos_legislativo)
-periodos_legis <- periodos_legis %>% unnest(everything())
-periodos_legis <- periodos_legis %>% set_colnames(periodos_legis %>% colnames %>% make_clean_names())
-periodos_legis <- periodos_legis %>% mutate(across(starts_with("fecha"), as.Date))
-
-periodos_legis %>% write_rds(here("data", "data_01_periodos-legis.rds"))
-
-#    Legislatura Actual ------------------------------------------------------
-
-legislatura_actual_url <- "http://opendata.congreso.cl/wscamaradiputados.asmx/getLegislaturaActual"
-
-legislatura_actual <- legislatura_actual_url %>% read_xml
-legislatura_actual <- legislatura_actual %>% as_list
-legislatura_actual <- legislatura_actual %>% transpose
-legislatura_actual <- legislatura_actual %>% as_tibble
-legislatura_actual <- legislatura_actual %>% set_colnames(legislatura_actual %>% colnames %>% make_clean_names)
-legislatura_actual <- legislatura_actual %>% unnest(everything())
-legislatura_actual <- legislatura_actual %>% unnest(everything())
-legislatura_actual <- legislatura_actual %>% mutate(across(starts_with("fecha"), as.Date))
-
-legislatura_actual %>% write_rds(here("data", "data_02_legislatura_actual.rds"))
-
-#    Legislaturas ------------------------------------------------------------
-
-legislaturas_url <- "http://opendata.congreso.cl/wscamaradiputados.asmx/getLegislaturas"
-
-legislaturas <- legislaturas_url %>% read_xml
-legislaturas <- legislaturas %>% as_list
-legislaturas <- legislaturas %>% as_tibble
-legislaturas <- legislaturas %>% set_colnames(legislaturas %>% colnames %>% make_clean_names())
-legislaturas <- legislaturas %>% mutate(legislaturas = legislaturas %>% map(as_tibble))
-legislaturas <- legislaturas %>% unnest(legislaturas)
-legislaturas <- legislaturas %>% unnest(everything())
-legislaturas <- legislaturas %>% set_colnames(legislaturas %>% colnames %>% make_clean_names())
-legislaturas <- legislaturas %>% mutate(across(starts_with("fecha"), as.Date))
-
-legislaturas %>% write_rds(here("data", "data_03_legislaturas.rds"))
+legislaturas  <- read_rds(here("data", "data_03_legislaturas.rds"))
 
 # SENADO ------------------------------------------------------------------
 
@@ -69,8 +22,8 @@ senadores %>% write_rds(here("data", "data_04_senadores.rds"))
 
 sesiones_url <- "https://www.senado.cl/wspublico/sesiones.php?legislatura="
 
-senado_sesiones <- legislaturas %>% select(numero)
-senado_sesiones <- senado_sesiones %>% mutate(sesiones = sesiones_url %>% paste0(numero))
+senado_sesiones <- legislaturas %>% select(numero_legis = numero)
+senado_sesiones <- senado_sesiones %>% mutate(sesiones = sesiones_url %>% paste0(numero_legis))
 senado_sesiones <- senado_sesiones %>% mutate(sesiones = sesiones %>% map(read_xml))
 senado_sesiones <- senado_sesiones %>% mutate(sesiones = sesiones %>% map(as_list))
 senado_sesiones <- senado_sesiones %>% mutate(sesiones = sesiones %>% map(as_tibble))
@@ -84,7 +37,6 @@ senado_sesiones <- senado_sesiones %>% rename(fecha_inicio_sesion = fechainicio_
 senado_sesiones <- senado_sesiones %>% rename(fecha_termino_sesion = fechatermino_sesion)
 senado_sesiones <- senado_sesiones %>% rename(id_diario_sesion = iddiario_sesion)
 senado_sesiones <- senado_sesiones %>% rename(id_sesion = sesiid_sesion)
-senado_sesiones <- senado_sesiones %>% select(-numero)
 
 senado_sesiones %>% write_rds(here("data", "data_05_senado_sesiones.rds"))
 
@@ -160,20 +112,5 @@ senado_cuentas <- senado_cuentas %>% mutate(diarios = diarios %>% map(as.list))
 senado_cuentas <- senado_cuentas %>% unnest(diarios)
 senado_cuentas <- senado_cuentas %>% unnest(diarios)
 
+senado_cuentas %>% write_rds(here("data", "data_09_senado_cuentas.rds"))
 senado_ordenes <- senado_diarios %>% filter(nombres %>% equals("OrdenDeldia"))
-
-# CAMARA DE DIPUTADOS -----------------------------------------------------
-
-# Diputados Vigentes ------------------------------------------------------
-
-diputados_url <- "http://opendata.congreso.cl/wscamaradiputados.asmx/getDiputados_Vigentes"
-
-diputados <- diputados_url %>% read_xml
-diputados <- diputados %>% as_list
-diputados <- diputados %>% as_tibble
-diputados <- diputados %>% rename(diputados = Diputados)
-diputados <- diputados %>% mutate(diputados = diputados %>% map(discard, is_empty))
-diputados <- diputados %>% mutate(diputados = diputados %>% map(as_tibble))
-diputados <- diputados %>% unnest(diputados)
-diputados <- diputados %>% unnest(everything())
-diputados <- diputados %>% set_colnames(diputados %>% colnames %>% make_clean_names)
